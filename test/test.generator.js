@@ -324,4 +324,124 @@ suite("generator helper", function() {
         });
 
     });
+
+    test("Registering generator helper in array each", function(done) {
+        this.timeout(1000);
+        var job = sinon.spy();
+        co(function*() {
+            var template = "{{#each set}}{{gn 'foo'}}{{/each}}";
+            var hbs = _hbs.create();
+            
+            hbs.registerGeneratorHelper({
+                gn: function(name) {
+                    return function *(next) {
+                        job.call();
+
+                        yield next;
+
+                        return new hbs.SafeString( name );
+                    };
+                },
+                block: function() {
+                    var args = [].slice.call(arguments);
+                    var options = args.pop();
+
+                    return options.fn(this);
+                }
+            });
+
+            var compiled = hbs.render(template);
+
+            var res = yield *compiled({set: ["a", "b"]});
+
+
+            assert(job.called);
+            assert.equal(res, "foofoo");
+
+            done();
+        });
+    });
+
+    test("Registering generator helper with loop scope (string)", function(done) {
+        this.timeout(1000);
+        var job = sinon.spy();
+        co(function*() {
+            var template = "{{#each set}}{{gn 'foo' name=this}}{{/each}}";
+            var hbs = _hbs.create();
+            
+            hbs.registerGeneratorHelper({
+                gn: function(name, options) {
+                    return function *(next) {
+                        job.call();
+
+                        yield next;
+
+                        return new hbs.SafeString( options.hash.name );
+                    };
+                },
+                block: function() {
+                    var args = [].slice.call(arguments);
+                    var options = args.pop();
+
+                    return options.fn(this);
+                }
+            });
+
+            var compiled = hbs.render(template);
+
+            var res = yield *compiled({set: ["a", "b"]});
+
+
+            assert(job.called);
+            assert.equal(res, "ab");
+
+            done();
+        });
+    });
+
+    test("Registering generator helper with loop scope (object)", function(done) {
+        this.timeout(1000);
+        var job = sinon.spy();
+        co(function*() {
+            var template = "{{#each set}}{{gn 'foo' name=name}}{{/each}}";
+            var hbs = _hbs.create();
+            
+            hbs.registerGeneratorHelper({
+                gn: function(name, options) {
+                    return function *(next) {
+                        job.call();
+
+                        yield next;
+
+                        return new hbs.SafeString( options.hash.name );
+                    };
+                },
+                block: function() {
+                    var args = [].slice.call(arguments);
+                    var options = args.pop();
+
+                    return options.fn(this);
+                }
+            });
+
+            var compiled = hbs.render(template);
+
+            var res = yield *compiled({
+                name: "root",
+                set: [
+                    {
+                        name: "a"
+                    }, {
+                        name: "b"
+                    }
+                ]
+            });
+
+
+            assert(job.called);
+            assert.equal(res, "ab");
+
+            done();
+        });
+    });
 });

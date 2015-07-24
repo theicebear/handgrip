@@ -44,4 +44,99 @@ suite("generator helper nesting", function() {
             done();
         });
     });
+
+    test("generator helper nesting inside block helper", function (done) {
+        this.timeout(1000);
+        var job = sinon.spy();
+        var hbs = _hbs.create();
+        
+        var mockyB = "Inception";
+        var mockyA = "Alice says hi ";
+
+        var subtemplate = '{{request mockyB}}';
+        var helperTemplate = '1.{{request mockyA}}2.{{request mockyB}}';
+        var template = "{{#helper}}{{/helper}}";
+        var data = { mockyB: mockyB, mockyA: mockyA };
+
+        hbs.registerGeneratorHelper("request", function(name) {
+            return function*(next) {
+                job.call();
+                var resA = yield Promise.resolve(name);
+
+                var subres = "";
+
+                // prevent infinite loop
+                if (name === mockyA) {
+                    var xtra = hbs.compile(subtemplate);
+                    subres = xtra(this);
+                }
+
+                yield next;
+                
+                return resA + subres;
+            };
+        });
+
+        hbs.registerGeneratorHelper("helper", function(name) {
+            return hbs.compile(helperTemplate)(this);
+        });
+
+
+        var cache = hbs.render(template);
+
+        co(function*(){
+            var output = yield *cache(data);
+            assert(job.called);
+            assert.equal(output, "1.Alice says hi Inception2.Inception");
+            done();
+        });
+    });
+
+    test("generator helper nesting inside each loop helper", function (done) {
+        this.timeout(1000);
+        var job = sinon.spy();
+        var hbs = _hbs.create();
+        
+        var mockyB = "Inception";
+        var mockyA = "Alice says hi ";
+
+        var subtemplate = '{{request mockyB}}';
+        var helperTemplate = '1.{{request mockyA}}2.{{request mockyB}}';
+        var template = "{{#each set}}{{#helper}}{{/helper}}{{/each}}";
+        var data = { set: [1, 2], mockyB: mockyB, mockyA: mockyA };
+
+        hbs.registerGeneratorHelper("request", function(name) {
+            return function*(next) {
+                job.call();
+                var resA = yield Promise.resolve(name);
+
+                var subres = "";
+
+                // prevent infinite loop
+                if (name === mockyA) {
+                    var xtra = hbs.compile(subtemplate);
+                    subres = xtra(this);
+                }
+
+                yield next;
+                
+                return resA + subres;
+            };
+        });
+
+        hbs.registerGeneratorHelper("helper", function(options) {
+            return hbs.compile(helperTemplate)(options.data.root);
+        });
+
+
+        var cache = hbs.render(template);
+
+        co(function*(){
+            var output = yield *cache(data);
+            assert(job.called);
+            assert.equal(output, "1.Alice says hi Inception2.Inception1.Alice says hi Inception2.Inception");
+            done();
+        });
+    });
+
 });

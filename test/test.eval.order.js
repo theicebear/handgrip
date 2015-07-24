@@ -4,7 +4,7 @@ var co = require("co");
 var _hbs = require("../");
 
 suite("generator helper nesting", function() {
-    test("evaluation orde of nested helpers", function (done) {
+    test("evaluation order of nested helpers", function (done) {
         this.timeout(1000);
         var job = sinon.spy();
         var hbs = _hbs.create();
@@ -52,7 +52,7 @@ suite("generator helper nesting", function() {
         });
     });
 
-    test("evaluation orde of nested helpers with partial", function (done) {
+    test("evaluation order of nested helpers with partial", function (done) {
         this.timeout(1000);
         var job = sinon.spy();
         var hbs = _hbs.create();
