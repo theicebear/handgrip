@@ -195,10 +195,66 @@ suite("generator helper nesting", function() {
     co(function*(){
       var output = yield *cache(data);
       assert(job.called);
-      console.log(output);
       //assert.equal(output, "1.Alice says hi Inception2.Inception1.Alice says hi Inception2.Inception");
       done();
     }).catch(ex);
   });
 
+
+  test("generator helper nesting in multiple each", function (done) {
+    this.timeout(1000);
+    var job = sinon.spy();
+    var hbs = _hbs.create();
+
+    var tpl = '{{#each groups}}{{include "./a"}}{{/each}}end';
+
+    var aTpl = '{{#each items}}{{gn name=this}}{{/each}}';
+
+    var tpl2 = '{{#each groups}}{{gn name=items}}{{/each}}';
+
+    var data = {
+      groups: [
+        {
+          items: "ab".split("")
+        },
+        {
+          items: "cd".split("")
+        }
+      ]
+    };
+
+    hbs.registerGeneratorHelper({
+      gn: function(options) {
+        return function* (next) {
+          job.call();
+
+          yield next;
+
+
+          return options.hash.name;
+        };
+      },
+      include: function(name, options) {
+        var self = this;
+        return function*(next) {
+          var o = yield hbs.render(aTpl)(self);
+          yield next;
+
+          return o;
+        }
+      }
+    });
+
+    var cache = hbs.render(tpl);
+
+    var ex = console.error.bind(console);
+
+    co(function*(){
+      var output = yield *cache(data);
+      //assert(job.called);
+      console.log("out:", output);
+      done();
+    }).catch(ex);
+
+  });
 });
