@@ -11,7 +11,7 @@
     "koa",
     "co"
   ],
-  "main": "lib/handgrip.js",
+  "main": "lib/index.js",
   "engines": {
     "node": ">= 0.11.14",
     "iojs": ">=1.0.2"

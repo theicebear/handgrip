@@ -30,6 +30,7 @@ suite("generator helper evaluation order", function() {
                 if (name === mockyA) {
                     var xtra = hbs.compile(subtemplate);
                     subres = xtra(Object.create(this));
+                    //subres = xtra(hbs.createFrame(options.data))
                 }
 
                 yield next;
@@ -45,6 +46,7 @@ suite("generator helper evaluation order", function() {
         co(function*(){
             var output = yield *cache(data);
             assert(job.called);
+            console.log(output, "\n", evalOrder.toString())
             assert.equal(output.toString(), "1.AB2.B");
             assert.equal(evalOrder.toString(), "10-,11-,20-,20+,11+,10+");
             done();
